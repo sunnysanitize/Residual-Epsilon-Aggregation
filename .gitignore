@@ -53,3 +53,8 @@ Sessionx.vim
 !/docs/residual_epsilon_note.md
 !/docs/metrics.md
 
+# Keep only the manuscript source, style, and compiled paper in paper/.
+/paper/*
+!/paper/residual_feedback_mlxor_2026.tex
+!/paper/residual_feedback_mlxor_2026.pdf
+!/paper/neurips_2026.sty
