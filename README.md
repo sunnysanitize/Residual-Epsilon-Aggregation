@@ -1,9 +1,9 @@
 # Residual-Epsilon Aggregation
 
-Code and artifacts for **“Does Bellman-Residual Feedback Help Adaptive State
-Aggregation? A Controlled Negative Result.”**
+Code and artifacts for **“Feedback or Annealing? A Controlled Study of Adaptive
+State Aggregation.”**
 
-**[Read the paper (PDF)](paper/residual_feedback_state_aggregation.pdf)**
+**[Read the paper (PDF)](paper/feedback_or_annealing.pdf)**
 
 This repository evaluates whether Bellman-residual feedback improves adaptive
 state aggregation on a 9,261-state inventory-control MDP. Across three update
@@ -59,10 +59,10 @@ configured seeds.
 ## Citation
 
 ```bibtex
-@misc{zhang2026residual,
+@misc{zhang2026feedback,
   author = {Sunny Zhang},
-  title  = {Does Bellman-Residual Feedback Help Adaptive State Aggregation?
-            A Controlled Negative Result},
+  title  = {Feedback or Annealing?
+            A Controlled Study of Adaptive State Aggregation},
   year   = {2026},
   note   = {MLxOR workshop manuscript},
   url    = {https://github.com/sunnysanitize/Residual-Epsilon-Aggregation}

@@ -55,4 +55,4 @@ Sessionx.vim
 
 # Keep only the compiled paper in paper/.
 /paper/*
-!/paper/residual_feedback_state_aggregation.pdf
+!/paper/feedback_or_annealing.pdf
