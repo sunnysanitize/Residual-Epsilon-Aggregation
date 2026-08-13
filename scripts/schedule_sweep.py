@@ -11,11 +11,23 @@ is then a property of the run rather than of the machine it ran on, so the
 compute-matched curves and the full-state VI reference are directly comparable
 across arms that do very different amounts of work per iteration.
 
-The epsilon arms are the preregistered six, unchanged, plus a recalibrated
-`geometric_slow`. The frozen `cycles=1429` was derived for a cycle length of
-seven; transplanted to a longer cycle it is still decaying at the horizon and
+The epsilon arms are the preregistered six, unchanged, plus two recalibrated
+ones. The frozen `geometric_slow` used `cycles=1429`, derived for a cycle length
+of seven; transplanted to a longer cycle it is still decaying at the horizon and
 never reaches its floor, which would read as a scheduling result when it is an
 artifact of the transplant.
+
+`geometric_matched` fixes the same class of transplant error in the *fast*
+control, which is the one the paper's claim rests on. `geometric_fast` is
+anchored at eps_0 = 0.4985 and 14 aggregate entries, both calibrated at the
+preregistered (2, 5). The residual rule's own opening width is `c` times the
+residual span after `global_len` deterministic global sweeps, so it moves with
+the mix: 0.400 at (5, 2) and 0.538 at (1, 20). Holding the control's anchor
+fixed therefore leaves it 25% coarser than the treatment at (5, 2), which is
+exactly the mix where the two arms separate -- the difference is confounded with
+the mismatch. `geometric_matched` re-derives both endpoints per mix from the
+residual arm's realized width path, so starting width, floor and entries to the
+floor agree by construction and only the closed loop is left to differ.
 """
 
 import argparse
@@ -29,7 +41,7 @@ from typing import Any
 import numpy as np
 from sweep import ARMS, median_ci
 
-from mdpagg.config import EpsilonCfg, GeometricEpsilonCfg, RunCfg, load
+from mdpagg.config import EpsilonCfg, GeometricEpsilonCfg, RunCfg, TraceCfg, load
 from mdpagg.run import RESULTS_ROOT, execute
 from mdpagg.solve import CACHE_ROOT
 from mdpagg.trace import environment
@@ -49,7 +61,8 @@ EPS_MIN = 0.05
 ## The paper's contrast. The remaining arms are still run and still written to
 ## the result file; they are context, not the claim.
 CONTRASTS = (
-    ("residual", "geometric_fast", "null -- the real test"),
+    ("residual", "geometric_matched", "null -- the real test, mismatch removed"),
+    ("residual", "geometric_fast", "null -- the preregistered anchor"),
     ("residual", "fixed_0.05", "null or negative"),
     ("residual", "geometric_slow_recal", "null once the decay is recalibrated"),
 )
@@ -80,13 +93,70 @@ def err_at_backups(trace: dict[str, Any], budget: float) -> float:
     return latest
 
 
-def arms_for(iterations: int, global_len: int, agg_len: int) -> dict[str, EpsilonCfg]:
+def residual_anchor(
+    base: RunCfg, root: Path, global_len: int, agg_len: int, seed: int = 0
+) -> tuple[float, int]:
+    ## The two endpoints an open-loop control has to reproduce: the first width
+    ## the residual rule ever sets, and the aggregate entry at which it clamps.
+    ##
+    ## The first is available before the treatment is ever run. It is `c` times
+    ## the residual span after `global_len` global sweeps, the MDP is
+    ## deterministic, and no aggregation has happened yet, so those sweeps are
+    ## arm-independent. The second is not: it depends on how far the aggregate
+    ## phases move V, so it is read off one residual run. `geometric_matched` is
+    ## therefore a matched control, not a preregistered one, which is why the
+    ## frozen `geometric_fast` is carried alongside it rather than replaced.
+    ##
+    ## fine_stride=1 because a schedule that clamps after seven aggregate
+    ## entries is invisible at the sweep's default stride of ten iterations.
+    cfg = at_mix(base, global_len, agg_len).model_copy(
+        update={"trace": TraceCfg(fine_stride=1)}
+    )
+    doc = execute(with_arm(cfg, ARMS["residual"], seed), root, trace_policy_loss=False)
+
+    floor = ARMS["residual"].eps_min
+    clamp = floor * (1.0 + 1e-12)
+    ## eps is 0 until the first partition is built, so `set` starts at the first
+    ## aggregate entry rather than at iteration 0.
+    set_widths = [
+        (int(t), float(e))
+        for t, e in zip(doc["trace"]["iteration"], doc["trace"]["eps"], strict=True)
+        if e > 0.0
+    ]
+    if not set_widths:
+        raise ValueError(f"residual arm set no width at ({global_len},{agg_len})")
+
+    eps_0 = set_widths[0][1]
+    clamped_at = next((t for t, e in set_widths if e <= clamp), None)
+    if clamped_at is None:
+        raise ValueError(
+            f"residual arm never reached its floor at ({global_len},{agg_len}); "
+            "there is no time-to-floor for the control to match"
+        )
+
+    return eps_0, clamped_at // (global_len + agg_len) + 1
+
+
+def arms_for(
+    base: RunCfg, root: Path, global_len: int, agg_len: int
+) -> dict[str, EpsilonCfg]:
+    eps_0, entries = residual_anchor(base, root, global_len, agg_len)
+
     return {
         **ARMS,
         "geometric_slow_recal": GeometricEpsilonCfg(
             eps_0=EPS_0,
             eps_min=EPS_MIN,
-            cycles=recalibrated_cycles(iterations, global_len, agg_len),
+            cycles=recalibrated_cycles(
+                base.algorithm.iterations, global_len, agg_len
+            ),
+        ),
+        ## Same floor as every other scheduled arm; the anchor and the entry
+        ## count come from the treatment's own path at this mix. cycles-1 is the
+        ## exponent's denominator, so cycles == entries puts the control at
+        ## eps_min on the same aggregate entry the residual rule clamps on.
+        "geometric_matched": GeometricEpsilonCfg(
+            eps_0=eps_0, eps_min=EPS_MIN, cycles=max(2, entries)
         ),
     }
 
@@ -151,7 +221,7 @@ def run_rows(
     for global_len, agg_len in MIXES:
         mix = f"({global_len},{agg_len})"
         at = at_mix(base, global_len, agg_len)
-        arms = arms_for(base.algorithm.iterations, global_len, agg_len)
+        arms = arms_for(base, root, global_len, agg_len)
 
         for name, epsilon in arms.items():
             for seed in seeds:

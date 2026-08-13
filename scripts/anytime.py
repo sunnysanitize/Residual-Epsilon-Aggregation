@@ -13,8 +13,13 @@ This script re-reads the same runs at intermediate compute budgets, where the
 schedules are still live, and separates the two contrasts the final iterate
 collapses together:
 
-    residual - fixed_0.05       does refinement scheduling help at all?
-    residual - geometric_fast   does the feedback signal help, given annealing?
+    residual - fixed_0.05        does refinement scheduling help at all?
+    residual - geometric_matched does the feedback signal help, given annealing?
+
+`geometric_matched` re-derives its starting width and its entries-to-floor from
+the residual arm's own path at each mix; `geometric_fast` holds the
+preregistered (2, 5) values at every mix and is carried alongside so the frozen
+comparison stays visible. The two coincide at (2, 5) by construction.
 
 Differences are reported relative to the control as well as in absolute value.
 The preregistered +/-0.02 region is an absolute margin calibrated to
@@ -41,7 +46,14 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from schedule_sweep import MIXES, SEEDS, at_mix, err_at_backups, with_arm
+from schedule_sweep import (
+    MIXES,
+    SEEDS,
+    arms_for,
+    at_mix,
+    err_at_backups,
+    with_arm,
+)
 from sweep import ARMS, median_ci
 
 from mdpagg.config import RunCfg, TraceCfg, load
@@ -49,14 +61,15 @@ from mdpagg.run import RESULTS_ROOT, execute
 from mdpagg.solve import CACHE_ROOT
 from mdpagg.trace import environment
 
-## Only the three arms the decomposition needs. The remaining preregistered
-## arms are unchanged in schedule_sweep.py and are not re-run here.
-ARM_NAMES = ("residual", "geometric_fast", "fixed_0.05")
+## Only the arms the decomposition needs. The remaining preregistered arms are
+## unchanged in schedule_sweep.py and are not re-run here.
+ARM_NAMES = ("residual", "geometric_matched", "geometric_fast", "fixed_0.05")
 
 ## (treatment, control, what the contrast isolates).
 CONTRASTS = (
     ("residual", "fixed_0.05", "annealing vs no annealing"),
-    ("residual", "geometric_fast", "feedback vs matched open loop"),
+    ("residual", "geometric_matched", "feedback vs matched open loop"),
+    ("residual", "geometric_fast", "feedback vs the preregistered open loop"),
 )
 
 ## Round decades, fixed before the differences were looked at. The ceiling is
@@ -80,11 +93,14 @@ def rows_at_budgets(
     for global_len, agg_len in MIXES:
         mix = f"({global_len},{agg_len})"
         at = at_mix(base, global_len, agg_len)
+        ## Same construction as the sweep, so the matched control here is the
+        ## identical config rather than a second calibration of it.
+        arms = arms_for(base, root, global_len, agg_len)
 
         for name in ARM_NAMES:
             for seed in seeds:
                 doc = execute(
-                    with_arm(at, ARMS[name], seed), root, trace_policy_loss=False
+                    with_arm(at, arms[name], seed), root, trace_policy_loss=False
                 )
                 trace = doc["trace"]
                 rows.append(
