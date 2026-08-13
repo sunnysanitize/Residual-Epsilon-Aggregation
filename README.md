@@ -69,19 +69,6 @@ Generated results are written to `results/`. Wall-clock measurements may vary
 by machine; final-iterate and backup-indexed results are deterministic for the
 configured seeds.
 
-## Citation
-
-```bibtex
-@misc{zhang2026feedback,
-  author = {Sunny Zhang},
-  title  = {Feedback or Annealing?
-            A Controlled Study of Adaptive State Aggregation},
-  year   = {2026},
-  note   = {MLxOR workshop manuscript},
-  url    = {https://github.com/sunnysanitize/Residual-Epsilon-Aggregation}
-}
-```
-
 ## License
 
 Released under the [MIT License](LICENSE).
