@@ -8,9 +8,10 @@ State Aggregation.”**
 This repository evaluates whether Bellman-residual feedback improves adaptive
 state aggregation on a 9,261-state inventory-control MDP. Across three update
 mixes and 20 paired seeds, a residual-driven aggregation width provides no
-practical improvement over a matched geometric schedule. The results suggest
-that the refinement timetable, not the feedback signal, is the useful component
-on this instance.
+practical improvement over a matched geometric schedule. Neither scheduled
+variant provides a practically meaningful final-iterate advantage over starting
+at the fine width, and the feedback signal adds no benefit over the matched
+open-loop schedule on this instance.
 
 ## Repository layout
 
