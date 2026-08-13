@@ -6,12 +6,17 @@ State Aggregation.”**
 **[Read the paper (PDF)](paper/feedback_or_annealing.pdf)**
 
 This repository evaluates whether Bellman-residual feedback improves adaptive
-state aggregation on a 9,261-state inventory-control MDP. Across three update
-mixes and 20 paired seeds, a residual-driven aggregation width provides no
-practical improvement over a matched geometric schedule. Neither scheduled
-variant provides a practically meaningful final-iterate advantage over starting
-at the fine width, and the feedback signal adds no benefit over the matched
-open-loop schedule on this instance.
+state aggregation on a 9,261-state inventory-control MDP.
+
+The result decomposes. Because the Bellman operator contracts the residual span
+by `gamma` per sweep, a residual-driven width is bounded by a geometric
+envelope, so the matched open-loop control is fixed in advance rather than
+fitted after the fact. Across three update mixes, 20 paired seeds, and five
+compute budgets, the feedback signal's largest reliable advantage over that
+timetable is 0.3% of the control's error and its largest disadvantage is 14.5%.
+The schedule feedback induces is worth far more than the feedback: against a
+fixed width it moves the error by up to 23.5% at a matched budget, in a
+direction that reverses as the budget grows.
 
 ## Repository layout
 
@@ -51,6 +56,13 @@ Reproduce the schedule-robustness experiment and figure:
 ```bash
 .venv/bin/python scripts/schedule_sweep.py configs/inventory_n3.json
 .venv/bin/python scripts/plot_schedule.py results/schedule_inventory_n3.json
+```
+
+Reproduce the budget-indexed reanalysis (Table 2) and the realized width paths
+checked against the span-contraction envelope (Proposition 1):
+
+```bash
+PYTHONPATH=scripts .venv/bin/python scripts/anytime.py configs/inventory_n3.json
 ```
 
 Generated results are written to `results/`. Wall-clock measurements may vary
