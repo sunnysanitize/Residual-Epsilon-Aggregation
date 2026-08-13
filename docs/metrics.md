@@ -298,6 +298,6 @@ every digit at ε ∈ {0.05, 0.1, 0.5} × seeds {0, 7}:
 
 ## Still to fill in
 
-| Task | Metric |
-|:--|:--|
-| 6.3 | Paired residual vs geometric vs fixed differences; `groups_clamped` rate |
+Nothing. 6.3 closed the last open row: the paired residual-vs-geometric-vs-fixed
+differences are in the contrast table above, and `groups_clamped` fired 0 times
+across all 120 runs.

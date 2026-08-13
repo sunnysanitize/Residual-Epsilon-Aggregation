@@ -12,12 +12,19 @@ produce effectively the same result. Their final paired difference is
 the benefit comes from how quickly the aggregation width shrinks, not from using
 the residual as feedback.
 
-This is a deliberately narrow conclusion from a preregistered experiment. The
-study covers one multi-asset inventory problem, one solver schedule, and 20
-paired seeds. It also includes a preregistered timing endpoint that turned out
-to be poorly chosen. The full record, including that mistake and its effect on
-the interpretation, is in
+This is a deliberately narrow conclusion from a preregistered experiment. **It is
+an empirical case study on a single problem instance**, not a general claim about
+residual feedback. The study covers one multi-asset inventory MDP and 20 paired
+seeds. It also includes a preregistered timing endpoint that turned out to be
+poorly chosen. The full record, including that mistake and its effect on the
+interpretation, is in
 [`docs/residual_epsilon_note.md`](docs/residual_epsilon_note.md).
+
+The conclusion is checked against three global/aggregate update mixes rather than
+the single preregistered one, which is what rules out the result being a property
+of that particular schedule. It is not a claim about other MDPs, other problem
+families, or other solvers. Whether feedback helps when the instance itself
+changes is untested here and is the obvious next experiment.
 
 ## What the study tests
 
@@ -86,8 +93,50 @@ iterate were null.
 
 The 20 ms result remains in the repository because it was preregistered. It has
 not been silently replaced with a more favorable endpoint. The conclusion is
-instead based on the stable portion of the experiment, where observing
-`span(TV - V)` adds no measurable value over a matched timetable.
+instead based on the stable portion of the experiment, and on the deterministic
+final iterate.
+
+## Schedule robustness
+
+A single update mix cannot distinguish a property of the `epsilon` rules from a
+property of that schedule, so [`scripts/schedule_sweep.py`](scripts/schedule_sweep.py)
+repeats the comparison at three mixes, written `(global_len, agg_len)`, and
+indexes the curves by billed backups rather than wall-clock. Backups are a
+property of the run; wall-clock is a property of the machine, which is what made
+the 20 ms endpoint unstable.
+
+Median final error, 20 seeds:
+
+| Configuration | `(5,2)` | `(2,5)` | `(1,20)` |
+|:--|--:|--:|--:|
+| Fixed, `epsilon = 0.05` | 0.0500 | 0.1379 | 0.1909 |
+| Residual | 0.0500 | 0.1388 | 0.2034 |
+| Geometric fast | 0.0437 | 0.1388 | 0.2005 |
+| Stopped value iteration | 1.76e-09 | — | — |
+
+Every rule that reaches `epsilon_min = 0.05` finishes in the same place at every
+mix, and rules that end elsewhere separate by up to twentyfold. The clearest case
+is the slow geometric arm: transplanted unchanged to `(1,20)` its decay is still
+running at the horizon, it ends at `epsilon = 0.232`, and it posts 1.59.
+Recalibrating only its cycle count so it reaches the floor returns it to 0.209,
+beside every other arm. What the final error tracks is the width a schedule ends
+at, not the path it takes there.
+
+Residual feedback shapes only the path, which is why it buys nothing. The
+stronger statement the data supports is that it is **never better and sometimes
+slightly worse**: at `(5,2)` the paired residual-minus-geometric difference is
+`+0.0063` with a confidence interval that excludes zero, and at `(1,20)` residual
+trails fixed-`0.05` by `+0.0125`, also excluding zero. Both sit inside the
+preregistered `+/-0.02` equivalence region, so practical equivalence holds — but
+"no measurable difference" would be too strong.
+
+Two honest caveats. This law governs value error and not decision quality: at
+`(2,5)` the lowest-error arm carries 2.5 times the policy loss of fixed-`0.05`,
+so ranking arms on the sup-norm alone is misleading. And ordinary value iteration
+— the `agg_len = 0` corner of the same solver — reaches `1.76e-09` for 92.6M
+billed backups against the best adaptive arm's 0.0437 for 67.7M. At this problem
+size aggregation is not competitive at any width or mix, which bounds where these
+questions are worth asking.
 
 ## The inventory problem
 
@@ -140,7 +189,20 @@ comparison is stored in `results/arms_inventory_n3.json`, while
 fixed-width reference is stored in `results/inventory_fixed_eps.json`, and the
 policy baselines are stored in `results/inventory_baselines.json`.
 
+The schedule-robustness comparison and its figure are separate, because they take
+about eight minutes:
+
+```bash
+.venv/bin/python scripts/schedule_sweep.py configs/inventory_n3.json
+.venv/bin/python scripts/plot_schedule.py results/schedule_inventory_n3.json
+```
+
+These write `results/schedule_inventory_n3.json` and the two-mode figure under
+`results/figures/`. Both are tracked, so the reported numbers can be checked
+without rerunning anything.
+
 Wall-clock columns depend on the machine and may differ from the values reported
-above. Final-iterate results are deterministic for the configured seeds.
+above. Final-iterate results and every backup-indexed column are deterministic
+for the configured seeds.
 
 The repository is released under the [MIT License](LICENSE).

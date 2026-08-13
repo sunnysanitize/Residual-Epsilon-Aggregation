@@ -22,8 +22,13 @@ htmlcov/
 
 
 *.npz
-/results/
 /cache/
+
+# The result JSON is the evidence, so it is tracked: a reader should be able to
+# check the reported numbers without first regenerating 120 runs. Two things
+# stay out, both large and both regenerable from the tracked configs -- the
+# ground-truth caches (*.npz, above) and the per-iteration curve dumps.
+/results/**/*_curves.json
 
 .env
 .env.*

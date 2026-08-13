@@ -186,9 +186,20 @@ So `span ≈ κ·ε` with `κ ∈ [0.39, 0.48]`, and the rule `ε ← c·span` h
 self-consistent fixed point at `ε = c·κ·ε`. That gives a threshold:
 
 - `c·κ < 1` — ε contracts each cycle and is driven to `ε_min`. **Stable.**
-- `c·κ > 1` — ε grows each cycle, coarsening without bound until `max_groups`
-  clamps and the run measures `eps_effective` rather than the ε named by the
-  policy.
+- `c·κ > 1` — ε grows each cycle, coarsening without bound until the partition
+  collapses to a single group. **Unstable.**
+
+**Corrected.** An earlier draft of this section said divergence ends at the
+`max_groups` clamp. It does not, and the direction matters. `rebin_by_value`
+sets `raw_bins = ceil((b2 - b1) / ε)`, so a growing ε produces *fewer* bins, and
+`groups_clamped` is `_count_groups(...) > max_groups` — a guard against a
+partition that is too fine. A diverging ε drives `num_groups` toward one and
+leaves `groups_clamped` `False` for the whole run, with `eps_effective` equal to
+the ε the policy named. The clamp is unreachable from above; it can only be
+reached by an ε small enough to resolve more than `max_groups` distinct bins.
+The failure mode of a large `c` is therefore a silent collapse to one group, not
+a clamped run — which is harder to notice, since `groups_clamped` is the field
+one would think to check.
 
 Taking the largest measured `κ = 0.473` gives a divergence threshold of
 `c ≈ 2.11`. **`c = 0.084` sits 25× below it.** This is recorded as a constraint
