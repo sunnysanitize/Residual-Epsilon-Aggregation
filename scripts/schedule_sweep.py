@@ -8,7 +8,7 @@ wall-clock endpoint selects a different iterate on every rerun.
 
 This script varies the mix and indexes by billed backups instead. The endpoint
 is then a property of the run rather than of the machine it ran on, so the
-compute-matched curves and the stopped-VI reference are directly comparable
+compute-matched curves and the full-state VI reference are directly comparable
 across arms that do very different amounts of work per iteration.
 
 The epsilon arms are the preregistered six, unchanged, plus a recalibrated
@@ -297,7 +297,7 @@ def result_payload(
 def report(payload: dict[str, Any]) -> None:
     vi = payload["vi"]["final"]
     print(
-        f"\nstopped VI reference: err {vi['err_inf']:.6g}  "
+        f"\nfull-state VI at the 10,000-sweep horizon: err {vi['err_inf']:.6g}  "
         f"policy_loss {vi['policy_loss']:.6g}  billed {vi['billed']:,}"
     )
 

@@ -6,7 +6,7 @@ backup per group where a global sweep costs one per state -- so an iteration
 axis flatters the arms that spend most of their iterations in the cheap phase,
 and a wall-clock axis is not reproducible across machines or reruns.
 
-The figure carries three of the seven arms plus the stopped-VI reference. The
+The figure carries three of the seven arms plus the full-state VI reference. The
 rest are in the result file; they are context, not the claim.
 """
 
@@ -80,7 +80,7 @@ def figure(data: dict[str, Any], mode: str) -> Any:
             linestyle=VI_STYLE,
             linewidth=1.6,
             color=c["muted"],
-            label="stopped VI",
+            label="full-state VI",
             zorder=2,
         )
 
@@ -122,7 +122,7 @@ def figure(data: dict[str, Any], mode: str) -> Any:
     problem = data["config"]["problem"]
     fig.suptitle(
         (
-            "Every rule that reaches $\\varepsilon_{\\min}$ lands together — "
+            "Rules reaching $\\varepsilon_{\\min}$ have similar error floors — "
             f"inventory $N={problem['num_assets']}$, "
             f"$Q={problem['q_max']}$, $\\gamma={problem['gamma']:g}$"
         ),

@@ -1,7 +1,7 @@
 """The schedule figure's series selection.
 
 The sweep runs seven epsilon arms; the paper's figure carries three plus the
-stopped-VI reference. The rest stay in the result file. These tests pin that
+full-state VI reference. The rest stay in the result file. These tests pin that
 the figure draws the paper's series and not whatever the sweep happened to
 produce, and that identity never rests on colour alone.
 """
@@ -50,14 +50,14 @@ def test_figure_omits_arms_the_paper_does_not_carry():
     plt.close(fig)
 
 
-def test_each_panel_carries_the_stopped_vi_reference():
+def test_each_panel_carries_the_full_state_vi_reference():
     data = payload_of(["(5,2)", "(2,5)"], list(PANEL_ARMS))
 
     fig = figure(data, "light")
 
     for ax in fig.axes:
         labels = {line.get_label() for line in ax.get_lines()}
-        assert "stopped VI" in labels
+        assert "full-state VI" in labels
     plt.close(fig)
 
 

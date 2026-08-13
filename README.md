@@ -112,9 +112,9 @@ Median final error, 20 seeds:
 | Fixed, `epsilon = 0.05` | 0.0500 | 0.1379 | 0.1909 |
 | Residual | 0.0500 | 0.1388 | 0.2034 |
 | Geometric fast | 0.0437 | 0.1388 | 0.2005 |
-| Stopped value iteration | 1.76e-09 | — | — |
+| Full-state VI, 10,000 sweeps | 1.76e-09 | — | — |
 
-Every rule that reaches `epsilon_min = 0.05` finishes in the same place at every
+Rules that reach `epsilon_min = 0.05` finish at similar error floors at every
 mix, and rules that end elsewhere separate by up to twentyfold. The clearest case
 is the slow geometric arm: transplanted unchanged to `(1,20)` its decay is still
 running at the horizon, it ends at `epsilon = 0.232`, and it posts 1.59.
@@ -133,8 +133,11 @@ preregistered `+/-0.02` equivalence region, so practical equivalence holds — b
 Two honest caveats. This law governs value error and not decision quality: at
 `(2,5)` the lowest-error arm carries 2.5 times the policy loss of fixed-`0.05`,
 so ranking arms on the sup-norm alone is misleading. And ordinary value iteration
-— the `agg_len = 0` corner of the same solver — reaches `1.76e-09` for 92.6M
-billed backups against the best adaptive arm's 0.0437 for 67.7M. At this problem
+— the `agg_len = 0` corner of the same solver — reaches `1.76e-09` at the common
+10,000-sweep horizon (92.6M billed backups), against the best adaptive arm's
+0.0437 for 67.7M. More importantly, the ground-truth solve meets its `1e-10`
+update tolerance after 454 sweeps, or 4.20M billed backups; the plotted reference
+continues to the common horizon and is not an early-stopped run. At this problem
 size aggregation is not competitive at any width or mix, which bounds where these
 questions are worth asking.
 
