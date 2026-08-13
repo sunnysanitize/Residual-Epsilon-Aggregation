@@ -1,6 +1,7 @@
 % NeurIPS 2026 MLxOR workshop short paper (single-blind, non-anonymous).
 \documentclass{article}
 
+\PassOptionsToPackage{numbers,sort&compress}{natbib}
 \usepackage[sglblindworkshop]{neurips_2026}
 \workshoptitle{MLxOR}
 \usepackage{amsmath,amssymb,booktabs,graphicx,microtype,url}
@@ -29,7 +30,7 @@ A Controlled Negative Result}
 Adaptive state aggregation replaces full-state Bellman updates with updates on
 groups of states having similar values.  A natural refinement rule shrinks the
 group width in response to the Bellman residual, but any gain may come from
-annealing itself rather than from feedback.  We isolate these effects on a
+annealing itself rather than from feedback.  I isolate these effects on a
 9,261-state inventory-control MDP by comparing
 $\varepsilon_t=\max\{0.05,0.084\,\operatorname{span}(TV_t-V_t)\}$ with a
 geometric timetable matched in initial width, floor, and decay rate.  Across
@@ -62,28 +63,47 @@ annealing schedule.  Comparing it only with a fixed width cannot tell whether
 the residual signal helps or whether almost any schedule with the same decay
 would work.
 
-We test the signal itself.  A residual-driven rule is compared with an
+I test the signal itself.  A residual-driven rule is compared with an
 open-loop geometric control matched in starting width, floor, and approximate
 time to the floor.  The original experiment was preregistered at one update mix
-and a 20\,ms endpoint.  We preserve that result, including the endpoint's
+and a 20\,ms endpoint.  I preserve that result, including the endpoint's
 failure, and add a work-indexed robustness check at three update mixes.  The
 result is negative but operationally useful: residual feedback provides no
 practical improvement over the matched timetable on this instance.  Exact
 rankings instead depend on update allocation and on whether performance is
 measured by value error or decision loss.
 
-\paragraph{Relation to prior work.}
-Classical aggregation analyses bound the loss from replacing a dynamic program
-with a smaller one \citep{whitt1978}; adaptive methods additionally change the
-aggregation directions or groups as computation proceeds \citep{bertsekas1989}.
-State-abstraction theory distinguishes several notions of when ground states
-may safely share an abstract state \citep{li2006}.  We study the especially
-simple value-based construction of \citet{chen2021}, whose guarantee scales as
-$2\varepsilon/(1-\gamma)$ when states in a group differ by at most
-$\varepsilon$.  Our question is complementary to those approximation results.
-We do not propose a new abstraction or convergence theorem; we ask whether a
-particular feedback signal improves the finite-compute trajectory after its
-induced annealing path is controlled for.
+\section{Related work}
+
+\paragraph{Aggregation and adaptive resolution.}
+Classical hard aggregation replaces each block of states by a common value;
+approximation and induced-policy losses can be related to within-block value
+variation \citep{whitt1978,vanroy2006}, while state-abstraction theory separates
+value-, action-, reward-, and transition-based notions of similarity
+\citep{li2006}.  Several methods adapt the representation during computation.
+\citet{bertsekas1989} group states by current residual magnitude when accelerating
+policy evaluation, and \citet{singh1995} adapt soft cluster memberships to reduce
+squared Bellman error.  Variable-resolution control instead splits cells using
+value, policy, influence, or variance criteria \citep{munos2002}; recent
+progressive disaggregation similarly slices regions relative to the evolving
+value function \citep{forghieri2024}.  I use the simpler construction of
+\citet{chen2021}, which repeatedly bins states by their current values and has an
+asymptotic error guarantee of $2\varepsilon/(1-\gamma)$ when within-bin value
+variation is at most $\varepsilon$.
+
+\paragraph{Bellman residuals and computational effort.}
+Bellman residuals provide computable value and greedy-policy error certificates
+\citep{williams1993}; their span seminorm has also been optimized directly in
+approximate value iteration \citep{arruda2011}.  Residual-based prioritized
+sweeping and related solvers use local errors to decide which states or
+partitions to back up \citep{moore1993,wingate2005}.  Yet a small residual need
+not be a reliable proxy for the decision objective under approximation
+\citep{geist2017}, motivating my separate policy-loss evaluation.  My use of
+the residual is narrower: its global span changes one resolution parameter, not
+group membership, state priority, or the fitting objective.  I therefore do not
+propose a new abstraction or convergence theorem; I test whether that feedback
+improves the finite-compute trajectory after controlling for the open-loop
+annealing path it induces.
 
 \section{Method}
 
@@ -100,7 +120,7 @@ $\alpha_t=1/\sqrt{t}$.  A schedule $(\ell_g,\ell_a)$ repeats $\ell_g$ global
 and $\ell_a$ aggregate iterations.  Rebinning occurs on entry to each aggregate
 phase, and lifting occurs on return to the global phase.
 
-After each global sweep we record
+After each global sweep I record
 $r_t=\operatorname{span}(TV_t-V_t)=\max_s(TV_t-V_t)(s)-
 \min_s(TV_t-V_t)(s)$.  The tested feedback rule is
 \begin{equation}
@@ -127,23 +147,23 @@ probabilities $(.1,.2,.4,.6,.8)$ and spreads $(1,.8,.5,.3,.15)$.  A transition
 is no fill or a one-unit fill on either side of one asset.  The one-period cost
 combines spread revenue with correlated inventory risk,
 $c(q,a)=0.02q^\top\Sigma q-\delta_a f_a L(q)$, where $\Sigma$ has unit diagonal
-and correlation $0.5$, and $L(q)$ removes infeasible boundary fills.  We use
+and correlation $0.5$, and $L(q)$ removes infeasible boundary fills.  I use
 $\gamma=.95$ and rescale costs so $\lVert V^*\rVert_\infty=100$.  This is a
-small market-making-style control model \citep{avellaneda2008}, not a calibrated
-market simulator.
+small market-making-style control model \citep{avellaneda2008,gueant2017}, not a
+calibrated market simulator.
 
 \paragraph{Protocol and metrics.}
 Each arm runs 10,000 iterations at $(5,2)$, $(2,5)$, and $(1,20)$.  The MDP is
 deterministic; seeds $0$--$19$ vary the within-group sampling stream and are
 paired across arms.  The primary reported metric is
-$\err=\lVert V-V^*\rVert_\infty$.  We also evaluate the greedy policy
+$\err=\lVert V-V^*\rVert_\infty$.  I also evaluate the greedy policy
 $\pi_V$ by $\lVert V^{\pi_V}-V^*\rVert_\infty$.
 
 Work-indexed curves use billed Bellman backups
 $B=n_g|\mathcal S|+\sum_t K_t$, where $K_t$ is the number of occupied groups.
 This accounting is favorable to aggregation: rebinning and lifting add
 $(n_r+n_l)|\mathcal S|$ state operations, and the residual scan is not charged.
-For final paired differences we report the median and a seeded 10,000-resample
+For final paired differences I report the median and a seeded 10,000-resample
 percentile-bootstrap interval.  The preregistered practical-equivalence region
 is $[-0.02,0.02]$ on the 100-normalized value scale.
 
@@ -219,7 +239,7 @@ The original primary endpoint was $(2,5)$ at 20\,ms.  It gave a residual-minus-
 geometric median of $-0.0417$ with 95\% CI $[-0.0459,0.0011]$, which is
 indeterminate under the equivalence rule.  Worse, repeated executions changed
 the interval because 20\,ms lies on a steep transient and selects a different
-iterate as machine load changes.  We report rather than replace that outcome.
+iterate as machine load changes.  I report rather than replace that outcome.
 The final-iterate and backup-indexed analyses are explicitly robustness
 analyses, motivated by this protocol failure, not retroactively preregistered
 endpoints.
@@ -278,13 +298,13 @@ adaptive algorithms require controls that reproduce the path induced by their
 feedback.  Otherwise, ordinary scheduling can be mistaken for intelligence.
 
 \clearpage
-\bibliographystyle{plainnat}
-\begin{thebibliography}{9}
+\bibliographystyle{unsrtnat}
+\begin{thebibliography}{99}
 
-\bibitem[Avellaneda and Stoikov(2008)]{avellaneda2008}
-Marco Avellaneda and Sasha Stoikov.
-\newblock High-frequency trading in a limit order book.
-\newblock \emph{Quantitative Finance}, 8(3):217--224, 2008.
+\bibitem[Whitt(1978)]{whitt1978}
+Ward Whitt.
+\newblock Approximations of dynamic programs, I.
+\newblock \emph{Mathematics of Operations Research}, 3(3):231--243, 1978.
 
 \bibitem[Bertsekas and Castanon(1989)]{bertsekas1989}
 Dimitri P. Bertsekas and David A. Castanon.
@@ -292,22 +312,81 @@ Dimitri P. Bertsekas and David A. Castanon.
   programming.
 \newblock \emph{IEEE Transactions on Automatic Control}, 34(6):589--598, 1989.
 
-\bibitem[Chen et~al.(2021)Chen, Gaebler, Peng, Sun, and Ye]{chen2021}
-Guanting Chen, Johann Demetrio Gaebler, Matt Peng, Chunlin Sun, and Yinyu Ye.
-\newblock An adaptive state aggregation algorithm for Markov decision
-  processes.
-\newblock \emph{arXiv preprint arXiv:2107.11053}, 2021.
-
 \bibitem[Li et~al.(2006)Li, Walsh, and Littman]{li2006}
 Lihong Li, Thomas J. Walsh, and Michael L. Littman.
 \newblock Towards a unified theory of state abstraction for MDPs.
 \newblock In \emph{Proceedings of the Ninth International Symposium on
   Artificial Intelligence and Mathematics}, 2006.
 
-\bibitem[Whitt(1978)]{whitt1978}
-Ward Whitt.
-\newblock Approximations of dynamic programs, I.
-\newblock \emph{Mathematics of Operations Research}, 3(3):231--243, 1978.
+\bibitem[Chen et~al.(2021)Chen, Gaebler, Peng, Sun, and Ye]{chen2021}
+Guanting Chen, Johann Demetrio Gaebler, Matt Peng, Chunlin Sun, and Yinyu Ye.
+\newblock An adaptive state aggregation algorithm for Markov decision
+  processes.
+\newblock \emph{arXiv preprint arXiv:2107.11053}, 2021.
+
+\bibitem[Van Roy(2006)]{vanroy2006}
+Benjamin Van Roy.
+\newblock Performance loss bounds for approximate value iteration with state
+  aggregation.
+\newblock \emph{Mathematics of Operations Research}, 31(2):234--244, 2006.
+
+\bibitem[Singh et~al.(1995)Singh, Jaakkola, and Jordan]{singh1995}
+Satinder P. Singh, Tommi Jaakkola, and Michael I. Jordan.
+\newblock Reinforcement learning with soft state aggregation.
+\newblock In \emph{Advances in Neural Information Processing Systems 7}, pages
+  361--368, 1995.
+
+\bibitem[Munos and Moore(2002)]{munos2002}
+R\'emi Munos and Andrew Moore.
+\newblock Variable resolution discretization in optimal control.
+\newblock \emph{Machine Learning}, 49(2--3):291--323, 2002.
+
+\bibitem[Forghieri et~al.(2024)Forghieri, Castel, Hyon, and Le~Pennec]{forghieri2024}
+Orso Forghieri, Hind Castel, Emmanuel Hyon, and Erwan Le~Pennec.
+\newblock Progressive state space disaggregation for infinite horizon dynamic
+  programming.
+\newblock In \emph{Proceedings of the Thirty-Fourth International Conference on
+  Automated Planning and Scheduling}, pages 221--229, 2024.
+
+\bibitem[Williams and Baird(1993)]{williams1993}
+Ronald J. Williams and Leemon C. Baird III.
+\newblock Tight performance bounds on greedy policies based on imperfect value
+  functions.
+\newblock Technical Report NU-CCS-93-14, Northeastern University, 1993.
+
+\bibitem[Arruda et~al.(2011)Arruda, Fragoso, and do~Val]{arruda2011}
+E.~F. Arruda, M.~D. Fragoso, and J.~B.~R. do~Val.
+\newblock Approximate dynamic programming via direct search in the space of
+  value function approximations.
+\newblock \emph{European Journal of Operational Research}, 211(2):343--351,
+  2011.
+
+\bibitem[Moore and Atkeson(1993)]{moore1993}
+Andrew W. Moore and Christopher G. Atkeson.
+\newblock Prioritized sweeping: Reinforcement learning with less data and less
+  real time.
+\newblock \emph{Machine Learning}, 13(1):103--130, 1993.
+
+\bibitem[Wingate and Seppi(2005)]{wingate2005}
+David Wingate and Kevin D. Seppi.
+\newblock Prioritization methods for accelerating {MDP} solvers.
+\newblock \emph{Journal of Machine Learning Research}, 6:851--881, 2005.
+
+\bibitem[Geist et~al.(2017)Geist, Piot, and Pietquin]{geist2017}
+Matthieu Geist, Bilal Piot, and Olivier Pietquin.
+\newblock Is the Bellman residual a bad proxy?
+\newblock In \emph{Advances in Neural Information Processing Systems 30}, pages
+  3205--3214, 2017.
+
+\bibitem[Avellaneda and Stoikov(2008)]{avellaneda2008}
+Marco Avellaneda and Sasha Stoikov.
+\newblock High-frequency trading in a limit order book.
+\newblock \emph{Quantitative Finance}, 8(3):217--224, 2008.
+
+\bibitem[Gu\'eant(2017)]{gueant2017}
+Olivier Gu\'eant.
+\newblock Optimal market making.
+\newblock \emph{Applied Mathematical Finance}, 24(2):112--154, 2017.
 
 \end{thebibliography}
 
