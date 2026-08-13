@@ -106,8 +106,7 @@ the value of an inventory depend on how positions across assets are correlated.
 The five-action space stays fixed as the number of assets grows. This is an
 important part of the design. Giving every asset five independent action levels
 would make the action count grow as `5^N`, limiting the usefulness of compressing
-the state space. The complete formulation, frozen constants, and validation
-evidence are in [`docs/inventory_design.md`](docs/inventory_design.md).
+the state space.
 
 ## Reproducing the study
 
@@ -143,36 +142,5 @@ policy baselines are stored in `results/inventory_baselines.json`.
 
 Wall-clock columns depend on the machine and may differ from the values reported
 above. Final-iterate results are deterministic for the configured seeds.
-
-## Code and documentation
-
-The solver implementation lives in `src/mdpagg/`, which contains the MDP
-representation, value-iteration routines, state partitioning, and adaptive
-solver. The frozen primary configuration is
-`configs/inventory_n3.json`. Experiment orchestration lives in
-`scripts/sweep.py`, and the end-to-end reproduction command is collected in
-`scripts/reproduce_residual_epsilon.sh`.
-
-The `tests/` directory contains the numerical, behavioral, and regression
-checks. [`docs/residual_epsilon_note.md`](docs/residual_epsilon_note.md) contains
-the preregistration, complete results, limitations, and conclusions.
-[`docs/inventory_design.md`](docs/inventory_design.md) explains the benchmark
-design, while [`docs/metrics.md`](docs/metrics.md) defines the recorded metrics.
-
-## Validation and provenance
-
-The exact value function is solved to `1e-10` and tied to the correct problem
-instance. The greedy policy evaluator is checked end to end, three policy
-baselines are verified to be pointwise worse than optimal, and the fixed control
-reproduces bit for bit after the experimental configurations are added. Seed
-variation is smaller than the gaps between adjacent fixed aggregation widths,
-which shows that the experiment had enough resolution to detect a meaningful
-difference. The experimental constants were also frozen before any
-residual-configuration result was generated.
-
-The project builds on the verified numerical core tagged `shared-core-v1`
-(`0dce46b`). The solver, maze benchmark, and correctness checks are shared
-engineering. The inventory MDP, epsilon policies, preregistration, and results
-belong to this study.
 
 The repository is released under the [MIT License](LICENSE).
