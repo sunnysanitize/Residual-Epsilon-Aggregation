@@ -3,25 +3,24 @@
 Code and artifacts for **“Does Bellman-Residual Feedback Help Adaptive State
 Aggregation? A Controlled Negative Result.”**
 
-**[Read the paper (PDF)](paper/residual_feedback_mlxor_2026.pdf)** ·
-[LaTeX source](paper/residual_feedback_mlxor_2026.tex)
+**[Read the paper (PDF)](paper/residual_feedback_state_aggregation.pdf)**
 
 This repository evaluates whether Bellman-residual feedback improves adaptive
 state aggregation on a 9,261-state inventory-control MDP. Across three update
 mixes and 20 paired seeds, a residual-driven aggregation width provides no
 practical improvement over a matched geometric schedule. The results suggest
-that the refinement timetable—not the feedback signal—is the useful component
+that the refinement timetable, not the feedback signal, is the useful component
 on this instance.
 
 ## Repository layout
 
-- `src/mdpagg/` — MDP and state-aggregation implementation
-- `configs/` — experiment configurations
-- `scripts/` — experiment and plotting scripts
-- `results/` — reported outputs and figures
-- `paper/` — manuscript source and compiled PDF
-- `docs/` — preregistration record and metric definitions
-- `tests/` — automated tests
+- `src/mdpagg/`: MDP and state-aggregation implementation
+- `configs/`: experiment configurations
+- `scripts/`: experiment and plotting scripts
+- `results/`: reported outputs and figures
+- `paper/`: compiled paper
+- `docs/`: preregistration record and metric definitions
+- `tests/`: automated tests
 
 ## Installation
 
