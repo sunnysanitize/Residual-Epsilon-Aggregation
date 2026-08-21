@@ -196,8 +196,10 @@ iterations, mean over entries after t = 3000):
 | `κ = span/ε` | 0.393 | 0.398 | 0.420 | 0.428 | 0.459 | 0.473 | 0.473 |
 | `err_inf` | 0.0525 | 0.1295 | 0.2798 | 0.7379 | 1.397 | 3.700 | 8.555 |
 
-**Stability bound: `c < 1/κ_max = 2.11`.** Above it `ε ← c·span` diverges and
-coarsens until `max_groups` clamps. `c = 0.084` is 25× below.
+The observed fixed-width plateau ratios suggest that `c = 0.084` is far from a
+positive-feedback regime on this instance. This is an empirical diagnostic,
+not a stability theorem. Also, `max_groups` clamps overly fine partitions by
+widening their effective ε; it does not prevent ε from becoming coarse.
 
 ### Wall-clock and error vs iteration (fixed arm, seed 0)
 

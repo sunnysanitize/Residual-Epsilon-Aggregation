@@ -8,15 +8,13 @@ State Aggregation.”**
 This repository evaluates whether Bellman-residual feedback improves adaptive
 state aggregation on a 9,261-state inventory-control MDP.
 
-The result decomposes. Because the Bellman operator contracts the residual span
-by `gamma` per sweep, a residual-driven width is bounded by a geometric
-envelope, so the matched open-loop control is fixed in advance rather than
-fitted after the fact. Across three update mixes, 20 paired seeds, and five
-compute budgets, the feedback signal's largest reliable advantage over that
-timetable is 0.3% of the control's error and its largest disadvantage is 14.5%.
-The schedule feedback induces is worth far more than the feedback: against a
-fixed width it moves the error by up to 23.5% at a matched budget, in a
-direction that reverses as the budget grows.
+On this instance, the residual-driven widths follow a roughly geometric path.
+I use the seed-0 feedback run to match an open-loop geometric schedule, then
+hold that schedule fixed. Across three update mixes, 20 paired seeds, and five
+compute budgets, feedback's largest advantage among unadjusted 95% intervals
+that exclude zero is 0.2% of the control's error. Its largest disadvantage is
+5.7%. Annealing matters more: matched geometric versus fixed width changes
+the error by up to 22.7%, and the direction changes with the budget.
 
 ## Repository layout
 
@@ -25,7 +23,7 @@ direction that reverses as the budget grows.
 - `scripts/`: experiment and plotting scripts
 - `results/`: reported outputs and figures
 - `paper/`: compiled paper
-- `docs/`: preregistration record and metric definitions
+- `docs/`: analysis record and metric definitions
 - `tests/`: automated tests
 
 ## Installation
@@ -58,8 +56,8 @@ Reproduce the schedule-robustness experiment and figure:
 .venv/bin/python scripts/plot_schedule.py results/schedule_inventory_n3.json
 ```
 
-Reproduce the budget-indexed reanalysis (Table 2) and the realized width paths
-checked against the span-contraction envelope (Proposition 1):
+Reproduce the exact budget-indexed reanalysis (Table 2) and compare the
+realized width paths with the descriptive geometric reference:
 
 ```bash
 PYTHONPATH=scripts .venv/bin/python scripts/anytime.py configs/inventory_n3.json

@@ -26,12 +26,11 @@ The preregistered +/-0.02 region is an absolute margin calibrated to
 final-iterate errors of 0.05-0.20; at a budget where both arms still have error
 of order 10 it is not a meaningful yardstick and a ratio is.
 
-The second half records the realized `eps` path of the residual arm against the
-span-contraction envelope. `T` is a gamma-contraction in span seminorm, so
-`span(TV - V)` decays at least geometrically along the global sweeps, and a
-width proportional to it is a geometric timetable whether or not anyone
-intended one. That is the mechanism behind the null, and it predicts the
-matched control before any of it is run.
+The second half records the realized `eps` path of the residual arm against a
+geometric reference curve. `T` is a gamma-contraction in span seminorm across
+consecutive global sweeps, but aggregate phases can increase the residual, so
+the reference is an empirical diagnostic rather than a bound on the alternating
+algorithm.
 
 Exploratory. Added after the preregistered analysis and after the schedule
 sweep; not a preregistered endpoint.
@@ -67,7 +66,7 @@ ARM_NAMES = ("residual", "geometric_matched", "geometric_fast", "fixed_0.05")
 
 ## (treatment, control, what the contrast isolates).
 CONTRASTS = (
-    ("residual", "fixed_0.05", "annealing vs no annealing"),
+    ("geometric_matched", "fixed_0.05", "annealing vs no annealing"),
     ("residual", "geometric_matched", "feedback vs matched open loop"),
     ("residual", "geometric_fast", "feedback vs the preregistered open loop"),
 )
@@ -82,6 +81,21 @@ BUDGETS = (1e5, 3e5, 1e6, 3e6)
 NULL_REGION = 0.02
 
 
+def at_exact_budget_trace(
+    base: RunCfg, global_len: int, agg_len: int
+) -> RunCfg:
+    """Return a run config that records every completed update.
+
+    A backup budget can fall between two ordinary trace checkpoints.  Reading
+    a stride-10 trace would then return the latest *recorded* update rather
+    than the latest completed update, and the error can change sharply across
+    the intervening global and aggregate phases.  Budget-indexed comparisons
+    therefore require a row after every update.
+    """
+    cfg = at_mix(base, global_len, agg_len)
+    return cfg.model_copy(update={"trace": TraceCfg(fine_stride=1)})
+
+
 def rows_at_budgets(
     base: RunCfg, root: Path, seeds: tuple[int, ...]
 ) -> list[dict[str, Any]]:
@@ -92,7 +106,7 @@ def rows_at_budgets(
 
     for global_len, agg_len in MIXES:
         mix = f"({global_len},{agg_len})"
-        at = at_mix(base, global_len, agg_len)
+        at = at_exact_budget_trace(base, global_len, agg_len)
         ## Same construction as the sweep, so the matched control here is the
         ## identical config rather than a second calibration of it.
         arms = arms_for(base, root, global_len, agg_len)
@@ -197,8 +211,7 @@ def schedule_path(base: RunCfg, root: Path, seed: int = 0) -> list[dict[str, Any
     out = []
 
     for global_len, agg_len in MIXES:
-        cfg = at_mix(base, global_len, agg_len)
-        cfg = cfg.model_copy(update={"trace": TraceCfg(fine_stride=1)})
+        cfg = at_exact_budget_trace(base, global_len, agg_len)
         doc = execute(
             with_arm(cfg, ARMS["residual"], seed), root, trace_policy_loss=False
         )
@@ -230,13 +243,11 @@ def schedule_path(base: RunCfg, root: Path, seed: int = 0) -> list[dict[str, Any
 
         live = [r for r in rows if r["eps"] > floor * (1.0 + 1e-12)]
 
-        ## The envelope is anchored at the first width the rule ever sets and
-        ## decays by gamma for every global sweep taken since. T is a
-        ## gamma-contraction in span seminorm, so this bounds the span -- and
-        ## hence the width -- as long as the global sweeps are what is moving V.
-        ## It is only claimed over `live`: once the width clamps, the aggregate
-        ## phases hold the span up at the aggregation floor and the envelope,
-        ## which keeps decaying, stops being the binding description.
+        ## The reference is anchored at the first width the rule sets and
+        ## decays by gamma for every global sweep taken since. Contraction
+        ## justifies this curve only within a consecutive block of global
+        ## sweeps; aggregate phases can increase the residual. The comparison
+        ## over the alternating path is therefore descriptive, not a theorem.
         ratios = []
         if live:
             span0, n0 = live[0]["residual_span"], live[0]["global_sweeps"]
@@ -270,7 +281,9 @@ def schedule_path(base: RunCfg, root: Path, seed: int = 0) -> list[dict[str, Any
                 "entries_to_floor": (
                     math.nan if clamped_at is None else clamped_at // cycle + 1
                 ),
-                ## <= 1 everywhere is the claim. Reported rather than asserted.
+                ## Descriptive comparison with the geometric reference. A
+                ## value <= 1 is observed here, not guaranteed by contraction
+                ## across the intervening aggregate phases.
                 "span_over_envelope_max": max(ratios, default=math.nan),
                 "envelope_holds": all(r <= 1.0 + 1e-9 for r in ratios),
                 "path": live,
@@ -295,6 +308,7 @@ def result_payload(
         "arms": list(ARM_NAMES),
         "seeds": list(seeds),
         "budgets": budgets,
+        "budget_trace_stride": 1,
         "null_region": NULL_REGION,
         "preregistered": False,
         "contrasts": [
@@ -320,15 +334,15 @@ def report(payload: dict[str, Any]) -> None:
             f"[{100 * c['rel_ci_lo']:+.2f}%,{100 * c['rel_ci_hi']:+.2f}%]"
         )
 
-    print("\nresidual schedule path vs the span-contraction envelope:")
+    print("\nresidual schedule path vs the empirical geometric reference:")
     for p in payload["schedule_paths"]:
         print(
             f"  {p['mix']:<8} eps_0 {p['eps_0']:.4f}  "
             f"realized decay/cycle {p['realized_per_cycle']:.4f}  "
-            f"bound gamma^l_g {p['gamma_per_cycle']:.4f}  "
+            f"reference gamma^l_g {p['gamma_per_cycle']:.4f}  "
             f"entries to floor {p['entries_to_floor']:>3.0f}  "
-            f"max span/envelope {p['span_over_envelope_max']:.4f}  "
-            f"envelope holds {p['envelope_holds']}"
+            f"max span/reference {p['span_over_envelope_max']:.4f}  "
+            f"below reference {p['envelope_holds']}"
         )
 
 

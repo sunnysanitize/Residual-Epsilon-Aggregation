@@ -54,7 +54,7 @@ PANEL_ARMS: dict[str, tuple[str, int, Any]] = {
     ## The matched control rather than the frozen one: at (5,2) and (1,20) the
     ## frozen arm starts at a different width, so plotting it here would show a
     ## gap that is an anchor mismatch rather than a feedback effect.
-    "geometric_matched": ("geometric (matched)", 1, (0, (5, 2))),
+    "geometric_matched": ("matched geometric", 1, (0, (5, 2))),
     "fixed_0.05": (r"fixed $\varepsilon=0.05$", 2, (0, (1, 1.6))),
 }
 

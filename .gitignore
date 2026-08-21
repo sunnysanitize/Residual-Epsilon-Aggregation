@@ -53,6 +53,8 @@ Sessionx.vim
 !/docs/residual_epsilon_note.md
 !/docs/metrics.md
 
-# Keep only the compiled paper in paper/.
+# Keep the manuscript sources and compiled paper, but ignore LaTeX build files.
 /paper/*
 !/paper/feedback_or_annealing.pdf
+!/paper/feedback_or_annealing.tex
+!/paper/neurips_2026.sty

@@ -1,10 +1,11 @@
-# Residual-driven state aggregation — preregistration (6.1)
+# Residual-driven state aggregation — protocol and analysis record (6.1)
 
-**Preregistered 2026-08-12, before any residual-arm result exists.** No run of
-`ResidualSpanEpsilon` on the inventory instance has been executed or inspected.
-Every number below comes from the frozen 5.6 fixed-ε baseline or from the
-arm-independent opening of the run; §"Where the numbers came from" says exactly
-which, and how to regenerate each.
+The original arms, seeds, endpoint, null region, and predictions were committed
+in analysis code on 2026-08-12 before the first committed residual-arm results.
+This narrative file was committed with those results, so it is a historical
+analysis record rather than a separately timestamped preregistration artifact.
+The sections below preserve which statements were made before versus after the
+results were inspected.
 
 Built on `shared-core-v1`. The instance, the solver and the protocol are 5.1–5.6
 unchanged — only the ε policy varies.
@@ -18,7 +19,7 @@ unchanged — only the ε policy varies.
 | `c` | **0.084** | §Calibrating `c` |
 | `ε₀` = `c · span₀` | **0.4985** | Derived; `span₀ = 5.93429` is deterministic |
 | `ε_min` | **0.05** | §Choosing `ε_min` |
-| Stability bound on `c` | `c < 2.11` | §The stability constraint — **new** |
+| Empirical feedback diagnostic | `c ≪ 2.11` | §The feedback diagnostic — **new** |
 | Geometric arms | `C = 1429` and `C = 14` | §Why the geometric arm runs twice |
 | Primary endpoint | `err_inf` at a **20 ms** wall-clock budget | §Endpoint |
 | Budget ladder | 5, 10, 20, 50, 100, 200, 400, 800 ms | §Endpoint |
@@ -129,7 +130,7 @@ the CI clear of the null region — which would be the publishable result.
 
 The hypothesis as written in `docs_private/overview.md` — "fixed ε reaches an
 approximation plateau while residual-driven ε continues descending" — cannot hold
-literally under any stable `c`; see the stability constraint below. Residual ε
+literally under the tested feedback regime; see the diagnostic below. Residual ε
 descends to `ε_min` and stops. Its asymptote is the fixed-`ε_min` floor, already
 measured at 0.1379. The revised, testable form of the hypothesis is prediction 3.
 
@@ -165,7 +166,7 @@ schedule change, and the test with it, but no run in this study reaches it. Its
 behaviour is also backwards for a coarse-to-fine rule — it would start at the
 *finest* ε — which is another reason not to let it fire silently.
 
-## The stability constraint
+## The feedback diagnostic
 
 **New, and not anticipated by the plan.** `c` is not only a scale factor; it
 decides whether the rule converges at all.
@@ -182,12 +183,15 @@ aggregate entries after t = 3000):
 | span / ε | 0.393 | 0.398 | 0.420 | 0.428 | 0.459 | 0.473 | 0.473 |
 | `err_inf` | 0.0525 | 0.1295 | 0.2798 | 0.7379 | 1.397 | 3.700 | 8.555 |
 
-So `span ≈ κ·ε` with `κ ∈ [0.39, 0.48]`, and the rule `ε ← c·span` has a
-self-consistent fixed point at `ε = c·κ·ε`. That gives a threshold:
+So `span ≈ κ·ε` with `κ ∈ [0.39, 0.48]`. A scalar fixed-point heuristic for
+`ε ← c·span` would place a transition near `cκ = 1`:
 
-- `c·κ < 1` — ε contracts each cycle and is driven to `ε_min`. **Stable.**
-- `c·κ > 1` — ε grows each cycle, coarsening without bound until the partition
-  collapses to a single group. **Unstable.**
+- `c·κ < 1` suggests ε will be driven toward `ε_min`.
+- `c·κ > 1` suggests positive feedback toward coarser partitions.
+
+This is not a stability theorem for the alternating algorithm: grouped phases
+change both the residual and the partition, so the measured fixed-width ratio
+does not establish a global recurrence for ε.
 
 **Corrected.** An earlier draft of this section said divergence ends at the
 `max_groups` clamp. It does not, and the direction matters. `rebin_by_value`
@@ -201,11 +205,10 @@ The failure mode of a large `c` is therefore a silent collapse to one group, not
 a clamped run — which is harder to notice, since `groups_clamped` is the field
 one would think to check.
 
-Taking the largest measured `κ = 0.473` gives a divergence threshold of
-`c ≈ 2.11`. **`c = 0.084` sits 25× below it.** This is recorded as a constraint
-on the parameter, not as a tuning result: any future `c` for this instance must
-be justified against 2.11, and a `c` near or above it would invalidate the arm
-rather than merely change it.
+Taking the largest measured `κ = 0.473` puts the heuristic transition near
+`c ≈ 2.11`. **`c = 0.084` sits 25× below it.** This records that the chosen
+constant is far from the observed positive-feedback regime; it does not certify
+stability for other constants, schedules, or MDPs.
 
 ## Choosing `ε_min`
 
@@ -290,9 +293,9 @@ instance**, and nothing wider. Specifically not claimed: behaviour at other `N`
 schedules, or on the maze — where §"transfer check" in 6.3 may look, but which
 cannot substitute for the inventory evidence.
 
-The stability threshold `c < 2.11` and the ratio `κ ≈ 0.4` are properties of this
-instance and this schedule. They are not claimed to hold generally, and a
-different MDP would need its own `κ` measured before `c` could be transferred.
+The ratio `κ ≈ 0.4` and the heuristic transition near `c = 2.11` are empirical
+properties of this instance and schedule. They are not claimed to hold
+generally and are not sufficient to transfer `c` to another MDP.
 
 ---
 
@@ -451,8 +454,8 @@ Two secondary observations, neither preregistered, both worth recording:
 - **`err_at_budget` is a step function over traced rows** at `fine_stride = 10`.
   In the steep transient, adjacent rows differ substantially, so budget columns
   below ~50 ms carry a resolution error that the CIs do not model.
-- **The stability threshold `c < 2.11` was measured, not derived**, on this
-  instance and schedule. It is not claimed to transfer.
+- **The apparent transition near `c = 2.11` is a fixed-width empirical
+  heuristic, not a stability theorem.** It is not claimed to transfer.
 
 ## Environment
 
