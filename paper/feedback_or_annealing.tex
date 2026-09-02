@@ -1,11 +1,21 @@
-% NeurIPS 2026 MLxOR workshop short paper (single-blind, non-anonymous).
+% Preprint version of the NeurIPS 2026 MLxOR workshop short paper.
 \documentclass{article}
 
 \PassOptionsToPackage{numbers,sort&compress}{natbib}
-\usepackage[sglblindworkshop]{neurips_2026}
+\usepackage[preprint]{neurips_2026}
 \workshoptitle{MLxOR}
 \usepackage{amsmath,amssymb,amsthm,booktabs,graphicx,microtype,url}
 \graphicspath{{../results/figures/}}
+
+% hyperref last, after natbib (loaded by neurips_2026) and amsthm, and before
+% \newtheorem so the proposition gets a proper anchor. It is what generates the
+% PDF outline: without it pdftex emits no /Outlines and stamps Creator: TeX.
+% hidelinks keeps the printed appearance identical -- links are live but unboxed.
+\usepackage[hidelinks,bookmarksnumbered]{hyperref}
+\hypersetup{
+  pdftitle={Feedback or Annealing? A Controlled Study of Adaptive State Aggregation},
+  pdfauthor={Sunny Zhang},
+}
 
 \newtheorem{proposition}{Proposition}
 
